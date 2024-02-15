@@ -16,9 +16,20 @@ Using different [API](#API-supported) from the manufacture, the platform is allo
 3. Enter the cloned repo ``cd .\UHAP``
 4. Enter the virtual enviroment by running the script ``.\Scripts\activate``
 5. Clone the required dependence ``python -m pip install requirements.txt``<br>
-5.1. If the pip is not installed, use this command ``python -m pip install --upgrade pip``
-6. Build // Under development
+    5.1. If the pip is not installed, use this command ``python -m pip install --upgrade pip``
+6. Build // Under development<br>
+    6.1. Please follow the [guide](#content-guide) to put the content to right directory<br>
+    6.2. When commit your contribution, please briefly discribe the content you commiting<br>
 
+## Content guide
+* ``Scripts`` for python enviroment setup and pre-requirement for launch development enviroment<br>
+* ``src`` for core function implimentation for better coding:<br>
+    ![Linus](https://pic1.zhimg.com/v2-08509d0e37e2787cb0a5e1df5c15f331_720w.jpg?source=172ae18b)<br>
+* ``var`` for build-in content for development<br>
+    * ``blueprint`` for automation blueprint<br>
+    * ``img`` for front end developer to store UI/UX elements<br>
+    * ``scheme`` for API scheme collected for future implimentation<br>
+    
 
 ## API supported
 // Under development
