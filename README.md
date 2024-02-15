@@ -14,12 +14,11 @@ Using different [API](#API-supported) from the manufacture, the platform is allo
 1. Make sure you have Python [3.11](https://www.python.org/downloads/release/python-3110/) or higher version installed.
 2. Clone the repository to local machine ``git clone https://github.com/qqpp4130/UHAP.git``
 3. Enter the cloned repo ``cd .\UHAP``
-4. Enter the virtual enviroment by running the script ``.\Scripts\activate``
-5. Clone the required dependence ``python -m pip install requirements.txt``<br>
-    5.1. If the pip is not installed, use this command ``python -m pip install --upgrade pip``
-6. Build // Under development<br>
-    6.1. Please follow the [guide](#content-guide) to put the content to right directory<br>
-    6.2. When commit your contribution, please briefly discribe the content you commiting<br>
+4. Enter the virtual enviroment ``python -m venv env`` <br>
+	4.1. If the pip is not installed, use this command ``python -m pip install --upgrade pip``
+5. Build // Under development<br>
+	5.1. Please follow the [guide](#content-guide) to put the content to right directory<br>
+	5.2. When commit your contribution, please briefly discribe the content you commiting<br>
 
 ## Content guide
 * ``Scripts`` for python enviroment setup and pre-requirement for launch development enviroment<br>
