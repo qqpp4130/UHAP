@@ -3,32 +3,15 @@ import errno
 import shc
 import os
 from datetime import datetime
-from src import http
+from src import HttpServer
+from src import Logger
 LOGDIR = os.getcwd() + "\\log"
 CURRENTTIME = datetime.now().strftime("%Y%m%d%H%M%S")
 LOGFILE = LOGDIR + "\\" + CURRENTTIME + ".log"
 
 isLogDir = os.path.exists(LOGDIR)
 
-class Logger(object):
-    def log(self, message):
-        global LOGFILE
-        f = open(LOGFILE, "a")
-        f.write(message + "\n")
-        f.close()
-        print(message)
-
-class TimestampLogger(Logger):
-    def log(self, message):
-        message = "{ts} {msg}".format(ts=datetime.now().isoformat(),
-                                      msg=message)
-        super(TimestampLogger, self).log(message)
-    def print(self, message):
-        message = "{ts} {msg}".format(ts=datetime.now().isoformat(),
-                                      msg=message)
-        print(message)
-
-LOG = TimestampLogger()
+LOG = Logger.TimestampLogger()
 
 if isLogDir:
     msg = "Log is goint to be logged in " + LOGFILE + "\n"
