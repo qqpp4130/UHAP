@@ -1,3 +1,4 @@
 schedule>=1.2.1
 stomp.py>=8.0.0
 smarthomeconnect>=0.8.0
+seamapi
