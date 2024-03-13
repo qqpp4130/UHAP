@@ -2,12 +2,13 @@
 import errno
 import shc
 import os
+import signal
 from datetime import datetime
 from src import HttpServer
 from src import Logger
-LOGDIR = os.getcwd() + "\\log"
+LOGDIR = os.getcwd() + "/log"
 CURRENTTIME = datetime.now().strftime("%Y%m%d%H%M%S")
-LOGFILE = LOGDIR + "\\" + CURRENTTIME + ".log"
+LOGFILE = LOGDIR + "/" + CURRENTTIME + ".log"
 
 isLogDir = os.path.exists(LOGDIR)
 
@@ -31,3 +32,13 @@ else:
         os.makedirs(LOGDIR, exist_ok=True)
         msg = "log directory created \n"
         LOG.print(msg)
+
+# start httpserver
+wspid = HttpServer.start_server(LOGFILE)
+print(wspid)
+
+# start daemon
+
+# preform clean exit after daemon has closed
+os.kill(wspid, signal.SIGTERM)
+

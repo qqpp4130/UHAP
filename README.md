@@ -20,7 +20,8 @@ _// Under development_
 3. Enter the cloned repo ``cd .\UHAP``
 4. Enter the virtual enviroment and install dependency ``python -m venv env`` <br>
 	4.1. If the pip is not installed, use this command ``python -m pip install --upgrade pip``
-	4.2. Install dependency ``python -m pip install -r requirements.txt``
+	4.2. Enter the venv with ``source env/bin/activate``
+	4.3. Install dependency ``python -m pip install -r requirements.txt``
 5. Build _// Under development_ <br>
 	5.1. Please follow the [guide](#content-guide) to put the content to right directory<br>
 	5.2. When commit your contribution, please briefly discribe the content you commiting<br>
