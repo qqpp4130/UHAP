@@ -1,3 +1,5 @@
+# Depretaed
+# to be removed in future commit
 # !/usr/bin/python
 import multiprocessing
 import enum
@@ -63,6 +65,10 @@ def start_server(logFile):
     # the current process 
     pid = os.getpid() 
     return pid
+
+def __init__(arg):
+    server("running.log")
+    return
 
 if __name__ == '__main__':
     shc.main()
