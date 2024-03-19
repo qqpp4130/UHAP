@@ -1,0 +1,38 @@
+const express = require('express');
+const axios = require('axios');
+const app = express();
+
+// Define your Ecobee API credentials
+const API_KEY = 'Dharam';
+const API_SECRET = 'Dharam@88';
+
+// Define a route to retrieve thermostat data
+app.get('/thermostat', async (req, res) => {
+  try {
+    // Make a request to the Ecobee API to retrieve thermostat data
+    const response = await axios.post('https://api.ecobee.com/1/thermostat', {
+      json: {
+        'selection': {
+          'selectionType': 'registered',
+          'selectionMatch': '',
+          'includeRuntime': true
+        }
+      },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_KEY}:${API_SECRET}`
+      }
+    });
+
+    // Return thermostat data to the client
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error retrieving thermostat data:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Start the server
+app.listen(3000, () => {
+  console.log('Server is running on port 3000');
+});
