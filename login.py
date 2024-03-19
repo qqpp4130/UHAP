@@ -1,7 +1,11 @@
+import os
 import tkinter as tk
 from tkinter import messagebox
 from PIL import Image, ImageTk
 import sqlite3
+
+global WORKDIR
+WORKDIR = os.getcwd()
 
 class LoginApp:
     def __init__(self, master):
@@ -11,7 +15,7 @@ class LoginApp:
         self.master.configure(bg="#fafafa")  # 设置窗口背景颜色
 
         # 加载指定的 logo 图片
-        self.logo_image = Image.open("/home/asher/Desktop/logo.png")
+        self.logo_image = Image.open(WORKDIR + "/var/img/logo.png")
         self.logo_image = self.logo_image.resize((100, 100))  # 调整图片大小
         self.logo = ImageTk.PhotoImage(self.logo_image)
         self.logo_label = tk.Label(self.master, image=self.logo, bg="#fafafa")
@@ -38,7 +42,7 @@ class LoginApp:
         self.button_register.pack(side=tk.LEFT, ipadx=10, ipady=5, padx=5, fill=tk.X, expand=True)
 
         # 连接 SQLite 数据库
-        self.conn = sqlite3.connect("user_database.db")
+        self.conn = sqlite3.connect(WORKDIR + "/var/db/user_database.db")
         self.cursor = self.conn.cursor()
 
         # 创建用户表
