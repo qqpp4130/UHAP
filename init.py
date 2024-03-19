@@ -48,7 +48,7 @@ speaker = shc.Variable(bool, 'speaker', initial_value=False)
 camera = shc.Variable(bool, 'camera', initial_value=False)
 switch = shc.Variable(bool, 'switch', initial_value=False)
 theromostat = shc.Variable(float, 'theromostat', initial_value=20.0)
-dimmer = shc.Variable(RangeUInt8, 'dimmer', initial_value=0)
+dimmer = shc.Variable(RangeFloat1, 'dimmer', initial_value=0)
 neon_light = shc.Variable(RGBUInt8, 'neon_light', initial_value=RGBUInt8(RangeUInt8(0), RangeUInt8(0), RangeUInt8(0)))
 fan = shc.Variable(bool, 'Fan', initial_value=False)
 temperture = shc.Variable(float, 'temperture', initial_value=16.0)
@@ -68,7 +68,7 @@ currentDevice = shc.Variable(Devices, 'Devices', initial_value=Devices.pc)
 # start httpserver
 # Define server main function and child components
 # WebServer running at port 8080
-web_server = WebServer('localhost', 8080, index_name='UHAP')
+web_server = WebServer('localhost', 8080, index_name='index')
 
 # Page index (Home)
 index_page = web_server.page('index', 'Home', menu_entry=True, menu_icon='home')
@@ -87,26 +87,25 @@ index_page.add_item(ButtonGroup("State of the Device", [
 index_page.add_item(ButtonGroup("Thermostat", [
     ValueButton(False, "Off", outline=True, color="black").connect(fan),
     ValueButton(True, "On", outline=True).connect(fan),
-    TextInput(float, icon('temperature high', "{} "), theromostat.name, min=16.0, max=36.0, step=0.5, input_suffix="°C").connect(temperture),
-    TextDisplay(int, icon('tint', "{} "), humidity.name ).connect(humidity)
+    TextInput(float, icon('temperature high', "{} ") + theromostat.name, min=16.0, max=36.0, step=0.5, input_suffix="°C").connect(temperture),
+    TextDisplay(int, icon('tint', "{} "), humidity.name).connect(humidity)
 ]))
 
 # Another segment in the right column
 # color light bulb
 index_page.new_segment("The neon light bulb with dimmer")
 
-index_page.add_item(ToggleButton(switch.name, color='red').connect(switch, convert=True))
+index_page.add_item(Switch(switch.name, color='red').connect(switch))
 index_page.add_item(ColorChoser().connect(neon_light))
-magic_button = StatelessButton(None, label=icon('magic', color="orange"))
+magic_button = StatelessButton(None, label=icon('magic'), color="orange")
 index_page.add_item(ButtonGroup("Supprise!", [magic_button]))
 
 # Trigger to randomize color
 @magic_button.trigger
 @shc.handler()
 async def do_rand(_v, _o) -> None:
-    await neon_light.write(RangeUInt8(random.randint(0,255)), RangeUInt8(random.randint(0,255)), RangeUInt8(random.randint(0,255)))
+    await neon_light.write(RGBUInt8(RangeUInt8(random.randint(0, 255)), RangeUInt8(random.randint(0, 255)), RangeUInt8(random.randint(0, 255))))
 
-index_page.new_segment("Light dimmer")
 index_page.add_item(MinMaxButtonSlider(dimmer.name, color='black').connect(dimmer))
 
 # Overview page
@@ -126,11 +125,12 @@ overview_page.add_item(ImageMap(
         (0.67, 0.30, ToggleButton(camera.name, color='black', outline=True,
                                   confirm_message="Do you want the camera on?", confirm_values=[True]).connect(camera)),
 
-        (0.26, 0.42, DisplayButton(label=icon(), color="red").connect(dimmer)),
+        (0.26, 0.42, ToggleButton(label=icon('volume up icon'), color="red").connect(speaker)),
+        (0.67, 0.42, ToggleButton(label=icon('volume up icon'), color="red").connect(speaker)),
 
         # We use the RangeFloat1 → bool conversion here to highlight the button with the popup, whenever the dimmer
         # value is > 0. To use another condition, you can pass a (lambda) function to the `convert` parameter
-        (0.42, 0.52, DisplayButton(label=icon('dragon'), color="black").connect(dimmer, convert=True), [
+        (0.42, 0.52, DisplayButton(label=icon('lightbulb outline icon'), color="black").connect(dimmer, convert=True), [
             Slider(dimmer.name).connect(dimmer)
         ]),
     ]
@@ -138,8 +138,10 @@ overview_page.add_item(ImageMap(
 
 overview_page.new_segment()
 overview_page.add_item(HideRowBox([
+    TextDisplay(str, "Device that has powered up", " List view"),
     HideRow(speaker.name, color='blue').connect(speaker),
     HideRow(fan.name, color='red').connect(fan),
+    HideRow(dimmer.name, color='green').connect(dimmer),
     # The optional button in the HideRow is completely independent from the row itself. Thus, we must connect the camera
     # variable individually to the button and to the HideRow
     HideRow(camera.name, color='black', button=StatelessButton(False, icon('power off'), color='red').connect(camera))
@@ -148,7 +150,13 @@ overview_page.add_item(HideRowBox([
 
 # TODO
 # furrther action need async action taker to connect to devices.
+# markup the device with syntax of lambda functions like the followint 
+# @magic_button.trigger
+# @shc.handler()
+# async def do_rand(_v, _o) -> None:
+
+# TODO
 # devices should be in seprate py file.
 
-# preform clean exit after daemon has closed
+# Startup the deamon by shc.main() and preform clean exit after daemon has closed
 sys.exit(shc.main())
