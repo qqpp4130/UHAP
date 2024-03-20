@@ -1,4 +1,4 @@
-# Copyright 2020 Michael Thies <mail@mhthies.de>
+# Copyright 220 Michael Thies <mail@mhthies.de>
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
 # the License. You may obtain a copy of the License at
@@ -29,17 +29,19 @@ from shc.web.widgets import *
 
 
 # An enum of special values
-class Fruits(enum.Enum):
-    APPLES = 0
-    LEMONS = 1
-    BANANAS = 2
+class Device(enum.Enum):
+    Speakers = 0
+    Light = 1
+    Thermometer = 2
+    Alarm = 3
+    Door = 4
 
 
 # Some State variables to interact with
 foo = shc.Variable(bool, 'foo', initial_value=False)
 bar = shc.Variable(bool, 'bar', initial_value=False)
 foobar = shc.Variable(bool, 'foobar', initial_value=False)
-yaks_favorite_fruit = shc.Variable(Fruits, 'yaks_favorite_fruit', initial_value=Fruits.APPLES)
+yaks_favorite_Device = shc.Variable(Device, 'yaks_favorite_Device', initial_value=Device.Light)
 number_of_yaks = shc.Variable(int, 'number_of_yaks', initial_value=0)
 yak_wool = shc.Variable(RangeFloat1, 'yak_wool', initial_value=0.0)
 yak_color = shc.Variable(RGBUInt8, 'yak_color', initial_value=RGBUInt8(RangeUInt8(0), RangeUInt8(0), RangeUInt8(0)))
@@ -55,7 +57,7 @@ web_server = shc.web.WebServer('localhost', 8080, index_name='index')
 index_page = web_server.page('index', 'Home', menu_entry=True, menu_icon='home')
 
 # A simple ButtonGroup with ToggleButtons for foobar
-index_page.add_item(ButtonGroup("State of the foobar", [
+index_page.add_item(ButtonGroup("State of the Device", [
     ToggleButton("Foo").connect(foo),
     ToggleButton("Bar", color='red').connect(bar),
     # Foobar requires confirmation when switched on.
@@ -70,26 +72,30 @@ index_page.add_item(ButtonGroup("The Foo", [
 ]))
 
 # … or use the ValueListButtonGroup as a shortcut, especially useful for enums
-index_page.add_item(ValueListButtonGroup([(Fruits.APPLES, '🍏'),
-                                          (Fruits.LEMONS, '🍋'),
-                                          (Fruits.BANANAS, '🍌')], "Which fruit?").connect(yaks_favorite_fruit))
+index_page.add_item(ValueListButtonGroup([(Device.Speakers, '🔊'),
+                                          (Device.Light, '💡'),
+                                          (Device.Thermometer, '🌡️'),
+                                          (Device.Alarm, '🔔'),
+                                          (Device.Door, '🔒')], "Which Device?").connect(yaks_favorite_Device))
 
 # … there's even a shortcut for the shortcut (if you don't mind seeing the enum raw entry names)
-index_page.add_item(EnumButtonGroup(Fruits, "Which fruit, again?").connect(yaks_favorite_fruit))
+index_page.add_item(EnumButtonGroup(Device, "Which Device, again?").connect(yaks_favorite_Device))
 
 # … or, let's simply take a dropdown
-index_page.add_item(Select([(Fruits.APPLES, '🍏'),
-                            (Fruits.LEMONS, '🍋'),
-                            (Fruits.BANANAS, '🍌')], "Now really, which fruit?").connect(yaks_favorite_fruit))
+index_page.add_item(Select([(Device.Speakers, '🔊'),
+                            (Device.Light, '💡'),
+                            (Device.Thermometer, '🌡️'),
+                            (Device.Alarm, '🔔'),
+                            (Device.Door, '🔒')], "Now really, which Device?").connect(yaks_favorite_Device))
 # … again, with shortcut
-index_page.add_item(EnumSelect(Fruits, "Which fruit, again?").connect(yaks_favorite_fruit))
+index_page.add_item(EnumSelect(Device, "Which Device, again?").connect(yaks_favorite_Device))
 
 
 # Let's change to the right column
 index_page.new_segment("The right column")
 
 # We also have buttons, that are only readable (disabled) …
-index_page.add_item(ButtonGroup("State of the bar", [
+index_page.add_item(ButtonGroup("State of the Device", [
     DisplayButton(label=icon('hat wizard'), color="teal").connect(bar),
 ]))
 # … or only clickable (stateless)
@@ -112,7 +118,7 @@ index_page.add_item(Switch("The foobar", color="black",
 index_page.new_segment(same_column=True)
 
 # For entering numbers or strings, use the TextInput widget
-index_page.add_item(TextInput(int, "Number of yaks", min=0, max=100, step=1, input_suffix="pc.")
+index_page.add_item(TextInput(int, "Choose the degree,100 is the top", min=0, max=100, step=1, input_suffix="pc.")
                     .connect(number_of_yaks))
 # … and for displaying them the TextDisplay widget
 index_page.add_item(TextDisplay(int, "{} Yaks", "The herd").connect(number_of_yaks))
@@ -146,7 +152,7 @@ color_page.add_item(Slider("Blue", color='blue')
 # Here we show the ImageMap and HideRows                                                    #
 #############################################################################################
 
-overview_page = web_server.page('overview', "Overview", menu_entry='Some Submenu', menu_icon='tachometer alternate',
+overview_page = web_server.page('overview', "Overview", menu_entry='Map', menu_icon='tachometer alternate',
                                 menu_sub_label="Overview")
 
 # ImageMap supports all the different Buttons as items, as well as the special ImageMapLabel
