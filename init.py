@@ -141,7 +141,6 @@ overview_page.add_item(HideRowBox([
     TextDisplay(str, "Device that has powered up", " List view"),
     HideRow(speaker.name, color='blue').connect(speaker),
     HideRow(fan.name, color='red').connect(fan),
-    HideRow(dimmer.name, color='green').connect(dimmer),
     # The optional button in the HideRow is completely independent from the row itself. Thus, we must connect the camera
     # variable individually to the button and to the HideRow
     HideRow(camera.name, color='black', button=StatelessButton(False, icon('power off'), color='red').connect(camera))
