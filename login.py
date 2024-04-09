@@ -1,99 +1,176 @@
-import os
 import tkinter as tk
 from tkinter import messagebox
 from PIL import Image, ImageTk
-import sqlite3
+import logging
+import os
 
-global WORKDIR
-WORKDIR = os.getcwd()
+# 设置日志
+logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-class LoginApp:
-    def __init__(self, master):
-        self.master = master
-        self.master.title("Login")  # 设置窗口标题
-        self.master.geometry("400x400")  # 设置窗口大小
-        self.master.configure(bg="#fafafa")  # 设置窗口背景颜色
+# 默认用户名和密码
+DEFAULT_USERNAME = 'admin'
+DEFAULT_PASSWORD = 'admin'
 
-        # 加载指定的 logo 图片
-        self.logo_image = Image.open(WORKDIR + "/var/img/logo.png")
-        self.logo_image = self.logo_image.resize((100, 100))  # 调整图片大小
-        self.logo = ImageTk.PhotoImage(self.logo_image)
-        self.logo_label = tk.Label(self.master, image=self.logo, bg="#fafafa")
-        self.logo_label.pack(pady=20)
+# 家庭用户
+home_users = {
+    'user1': 'password1',
+    'user2': 'password2',
+    'user3': 'password3'
+}
 
-        # 创建登录界面的输入框和按钮
-        self.label_username = tk.Label(self.master, text="Username", bg="#fafafa", font=("Arial", 12))
-        self.label_username.pack()
-        self.entry_username = tk.Entry(self.master, bg="#f0f0f0", fg="black", font=("Arial", 12), relief=tk.FLAT)
-        self.entry_username.pack(ipadx=10, ipady=5, pady=5)
+# 登录函数
+def login(username_entry, password_entry, window):
+    username = username_entry.get()
+    password = password_entry.get()
+    if username == DEFAULT_USERNAME and password == DEFAULT_PASSWORD:
+        logging.info(f"User {username} logged in successfully")
+        window.destroy()
+        user_info_window = tk.Tk()
+        user_info_window.title("User Information")
+        user_info_window.geometry("700x600")
+        
+        # 添加系统logo
+        add_logo(user_info_window)
+        
+        # 添加头像
+        add_avatar(user_info_window)
+        
+        # Create Change Password button
+        change_password_button = tk.Button(user_info_window, text="Change Password", command=lambda: change_password(user_info_window, username))
+        change_password_button.pack(pady=10)
+        
+        # Create Set Home User button
+        set_home_user_button = tk.Button(user_info_window, text="Set Home User", command=lambda: set_home_user(user_info_window))
+        set_home_user_button.pack(pady=10)
+        
+        user_info_window.mainloop()
+    else:
+        logging.warning(f"User {username} failed to log in")
+        messagebox.showerror("Login Failed", "Incorrect username or password!")
 
-        self.label_password = tk.Label(self.master, text="Password", bg="#fafafa", font=("Arial", 12))
-        self.label_password.pack()
-        self.entry_password = tk.Entry(self.master, show="*", bg="#f0f0f0", fg="black", font=("Arial", 12), relief=tk.FLAT)
-        self.entry_password.pack(ipadx=10, ipady=5, pady=5)
+# 更改密码函数
+def change_password(window, username):
+    window.destroy()
+    change_password_window = tk.Tk()
+    change_password_window.title("Change Password")
+    change_password_window.geometry("700x600")
+    
+    # 添加系统logo
+    add_logo(change_password_window)
+    
+    new_password_label = tk.Label(change_password_window, text="Enter new password:")
+    new_password_label.pack(pady=10)
+    
+    new_password_entry = tk.Entry(change_password_window, show="*")
+    new_password_entry.pack(pady=10)
+    
+    confirm_button = tk.Button(change_password_window, text="Confirm", command=lambda: update_password(username, new_password_entry.get(), change_password_window))
+    confirm_button.pack(pady=10)
+    
+    change_password_window.mainloop()
 
-        self.button_frame = tk.Frame(self.master, bg="#fafafa")
-        self.button_frame.pack(pady=10)
+def update_password(username, new_password, window):
+    global DEFAULT_PASSWORD, home_users
+    if username == DEFAULT_USERNAME:
+        DEFAULT_PASSWORD = new_password
+        logging.info("Admin password updated")
+    elif username in home_users:
+        home_users[username] = new_password
+        logging.info(f"Password for user {username} updated")
+    else:
+        logging.warning("User does not exist")
+        messagebox.showerror("User does not exist", "This user does not exist!")
+    messagebox.showinfo("Password Updated", "Password updated successfully!")
+    window.destroy()
 
-        self.button_login = tk.Button(self.button_frame, text="Login", font=("Arial", 10), command=self.login, bg="#4CAF50", fg="white", relief=tk.FLAT)
-        self.button_login.pack(side=tk.LEFT, ipadx=10, ipady=5, padx=5, fill=tk.X, expand=True)
+# 设置家庭用户函数
+def set_home_user(window):
+    window.destroy()
+    set_user_window = tk.Tk()
+    set_user_window.title("Set Home User")
+    set_user_window.geometry("700x600")
+    
+    # 添加系统logo
+    add_logo(set_user_window)
+    
+    username_label = tk.Label(set_user_window, text="Username:")
+    username_label.pack(pady=10)
+    username_entry = tk.Entry(set_user_window)
+    username_entry.pack(pady=10)
+    
+    password_label = tk.Label(set_user_window, text="Password:")
+    password_label.pack(pady=10)
+    password_entry = tk.Entry(set_user_window, show="*")
+    password_entry.pack(pady=10)
+    
+    confirm_button = tk.Button(set_user_window, text="Confirm", command=lambda: add_home_user(username_entry.get(), password_entry.get(), set_user_window))
+    confirm_button.pack(pady=10)
+    
+    set_user_window.mainloop()
 
-        self.button_register = tk.Button(self.button_frame, text="Register", font=("Arial", 10), command=self.register, bg="#2196F3", fg="white", relief=tk.FLAT)
-        self.button_register.pack(side=tk.LEFT, ipadx=10, ipady=5, padx=5, fill=tk.X, expand=True)
+def add_home_user(username, password, window):
+    global home_users
+    home_users[username] = password
+    logging.info(f"Home user {username} added")
+    messagebox.showinfo("User Added", f"Home user {username} added successfully!")
+    window.destroy()
 
-        # 连接 SQLite 数据库
-        self.conn = sqlite3.connect(WORKDIR + "/var/db/user_database.db")
-        self.cursor = self.conn.cursor()
+# 创建登录界面
+def create_login_gui():
+    login_window = tk.Tk()
+    login_window.title("Login System")
+    login_window.geometry("700x600")
 
-        # 创建用户表
-        self.cursor.execute('''CREATE TABLE IF NOT EXISTS users (
-                            id INTEGER PRIMARY KEY,
-                            username TEXT UNIQUE,
-                            password TEXT
-                            )''')
-        self.conn.commit()
+    # 添加系统logo
+    add_logo(login_window)
+    
+    username_label = tk.Label(login_window, text="Username:")
+    username_label.pack(pady=10)
+    username_entry = tk.Entry(login_window)
+    username_entry.insert(0, "admin")
+    username_entry.pack(pady=10)
 
-    def login(self):
-        # 获取用户名和密码输入框中的内容
-        username = self.entry_username.get()
-        password = self.entry_password.get()
+    password_label = tk.Label(login_window, text="Password:")
+    password_label.pack(pady=10)
+    password_entry = tk.Entry(login_window, show="*")
+    password_entry.pack(pady=10)
 
-        # 查询数据库中是否存在对应的用户名和密码
-        self.cursor.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
-        user = self.cursor.fetchone()
+    login_button = tk.Button(login_window, text="Login", command=lambda: login(username_entry, password_entry, login_window))
+    login_button.pack(pady=10)
 
-        if user:
-            # 如果查询到用户，显示登录成功的消息框
-            messagebox.showinfo("Login Success", "Welcome, {}!".format(username))
-            self.master.destroy()  # 登录成功后关闭登录窗口
-        else:
-            # 如果用户名或密码错误，显示登录失败的消息框
-            messagebox.showerror("Login Failed", "Incorrect username or password")
+    login_window.mainloop()
 
-    def register(self):
-        # 获取用户名和密码输入框中的内容
-        username = self.entry_username.get()
-        password = self.entry_password.get()
+# 添加系统logo函数
+def add_logo(window):
+    current_dir = os.path.dirname(__file__)
+    logo_path = os.path.join(current_dir, "logoicon.png")
+    if os.path.exists(logo_path):
+        logo_image = Image.open(logo_path)
+        logo_photo = ImageTk.PhotoImage(logo_image)
+        logo_label = tk.Label(window, image=logo_photo)
+        logo_label.image = logo_photo
+        logo_label.pack(pady=10)
+    else:
+        logging.warning("Logo image not found")
 
-        # 检查用户名是否已存在
-        self.cursor.execute("SELECT * FROM users WHERE username=?", (username,))
-        existing_user = self.cursor.fetchone()
+# 添加头像函数
+def add_avatar(window):
+    current_dir = os.path.dirname(__file__)
+    avatar_path = os.path.join(current_dir, "avatar.png")
+    if os.path.exists(avatar_path):
+        avatar_image = Image.open(avatar_path)
+        avatar_image = avatar_image.resize((200, 200))
+        avatar_photo = ImageTk.PhotoImage(avatar_image)
+        avatar_label = tk.Label(window, image=avatar_photo)
+        avatar_label.image = avatar_photo
+        avatar_label.pack(pady=10)
+    else:
+        logging.warning("Avatar image not found")
 
-        if existing_user:
-            messagebox.showerror("Registration Failed", "Username already exists")
-        else:
-            # 注册新用户并显示注册成功的消息框
-            self.cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
-            self.conn.commit()
-            messagebox.showinfo("Registration Success", "Account {} registered successfully!".format(username))
+# 空的 main 函数
+def main():
+    pass
 
-def show_login_window():
-    # 创建 Tkinter 窗口实例
-    root = tk.Tk()
-    # 创建登录应用实例，并将窗口对象作为参数传递给它
-    app = LoginApp(root)
-    # 进入 Tkinter 事件循环，显示窗口
-    root.mainloop()
-
-# 调用此函数以显示登录界面
-show_login_window()
+# 测试代码
+if __name__ == "__main__":
+    create_login_gui()
