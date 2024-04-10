@@ -1,4 +1,4 @@
-from typing import Any, Self, Type, NamedTuple, Optional
+from typing import Any, Self, Type, NamedTuple, Optional, Generic
 import enum
 import shc
 from shc.datatypes import *
@@ -84,8 +84,34 @@ class Multimedia_Device(NamedTuple):
     def textdisplay(self):
         return {"metadata":(self.metadata, "Now Playing ")}
 
-class Devices(enum.Enum):
-    switch = Switch_Device
-    thermostat = Thermostat_Device
-    camera = Camera_Device
-    multimedia = Multimedia_Device
+class String(str):
+    """
+    A string value been overwriten in variable form.
+    """
+    def __new__(cls, *args, **kwargs):
+        # noinspection PyArgumentList
+        res = str.__new__(cls, *args, **kwargs)
+        if not type(res) == str:
+            try:
+                res = str(res)
+            except:
+                raise ValueError("{} is not allowed to be convert to String form {}".format(res, cls.__name__))
+        return res
+
+    @overload
+    def __mul__(self, other: "String") -> "String": ...
+
+    def __mul__(self, other):
+        if isinstance(other, String):
+            return String(super().__mul__(str(other)))
+        else:
+            return super().__mul__(other)
+
+    @overload
+    def __rmul__(self, other: "String") -> "String": ...
+
+    def __rmul__(self, other):
+        return self.__mul__(other)
+
+    
+Devices = [(Switch_Device, "Switch"), (Thermostat_Device, "Thermostat"), (Camera_Device, "Camera"), (Multimedia_Device, "Multimedia")]

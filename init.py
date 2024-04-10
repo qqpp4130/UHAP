@@ -106,8 +106,7 @@ async def do_rand(_v, _o) -> None:
 index_page.add_item(MinMaxButtonSlider(dimmer.parent.name, color='black').connect(dimmer))
 
 # Overview page
-overview_page = web_server.page('overview', "Overview", menu_entry='Overview', menu_icon='tachometer alternate',
-                                menu_sub_label="Overview")
+overview_page = web_server.page('overview', "Overview", menu_entry=True, menu_icon='tachometer alternate')
 
 # ImageMap supports all the different Buttons as items, as well as the special ImageMapLabel
 # The optional fourth entry of each item is a list of WebPageItems (everything we have shown so far – even an ImageMap))
@@ -145,12 +144,11 @@ overview_page.add_item(HideRowBox([
 ]))
 
 # create a new page for new elements
-add_device_page = web_server.page('add', "Add", menu_entry='Add devices', menu_icon='plus circle icon',
-                                menu_sub_label="add devices")
+add_device_page = web_server.page('add', "Add", menu_entry=True, menu_icon='plus circle icon')
 
 # device selection to add bar
-newDevice_type = shc.Variable(style.Devices, 'Device', initial_value=style.Devices.switch)
-add_device_page.add_item(EnumSelect(style.Devices, "Add device type selection").connect(newDevice_type))
+newDevice_type = shc.Variable(type(style.Devices[0][0]), 'Device', initial_value=style.Devices[0][0])
+add_device_page.add_item(Select(style.Devices, "Add device type selection").connect(newDevice_type))
 
 # impliment the button to add the device to the page
 add_button = StatelessButton(None, label=icon('plus'), color="black")
@@ -158,20 +156,25 @@ format_button = StatelessButton(None, label=icon('sync'), color="black")
 add_device_page.add_item(ButtonGroup("Add the device to the page, use Sync button first to sync the format of the device value type", [add_button, format_button]))
 
 # segment for adding the input of the device
-add_device_page.new_segment()
+add_device_page.new_segment("New Devices setup")
 
 # edit the argument of the new device
-newDevice_name = "New Device"
-add_device_page.add_item(TextInput(str, 'The name of the device', "{} ").connect(newDevice_name))
+newDevice_name = shc.Variable(style.String, initial_value="New Device")
+'''
+add_device_page.add_item(TextInput(style.String, 'The name of the device', "{} ").connect(newDevice_name))
 newDevice_instanse = newDevice_type._value.value()
 add_device_page.add_item(TextInput(str, 'Value of the device: Not initialized ', "{} "))
 # Trigger to update the element of the value input format
+'''
+'''
 @format_button.trigger
 @shc.handler()
 async def sync(_v, _o) -> None:
     newDevice_instanse = newDevice_type._value.value()
     add_device_page.segments[-1].items[-1] = TextInput(NamedTuple, 'Value of the device', "{} ").connect(newDevice_instanse)
     add_device_page.segments[-1].items[-1].render()
+'''
+'''
 # Trigger to add the device after the trigger
 @add_button.trigger
 @shc.handler()
@@ -183,26 +186,27 @@ async def add_to(_v, _o) -> shc.Variable:
     _floatinput = newDevice_instanse.floatinput()
     _textdisplay = newDevice_instanse.textdisplay()
     # initialize the newdevice shc.Variable object to return
-    newDevice = shc.Variable(newDevice_type._value.value, newDevice_name, initial_value=newDevice_type._value.value(**newDevice_instanse._asdict()))
+    newDevice = shc.Variable(newDevice_type._value.value, newDevice_name._value, initial_value=newDevice_type._value.value(**newDevice_instanse._asdict()))
     if _turnable != None:
         for key in _turnable.keys():
-            _turnlist.append(Switch(newDevice_name + " " + key).connect(newDevice.field(key)))
+            _turnlist.append(Switch(newDevice_name._value + " " + key).connect(newDevice.field(key)))
         add_device_page.add_item(ButtonGroup("Toggle of the Device", _turnlist))
     if _adjustable != None:
         for key in _adjustable.keys():
-            add_device_page.add_item(MinMaxButtonSlider(newDevice_name + " " + key).connect(newDevice.field(key)))
+            add_device_page.add_item(MinMaxButtonSlider(newDevice_name._value + " " + key).connect(newDevice.field(key)))
     if _coloradjustable != None:
         for key in _coloradjustable.keys():
             add_device_page.add_item()
             pass
     if _floatinput != None:
         for key in _floatinput.keys():
-            add_device_page.add_item(TextInput(type(_floatinput[key][0]), newDevice_name + " " + key, _floatinput[key][1], _floatinput[key][2], _floatinput[key][3], _floatinput[key][4]))
+            add_device_page.add_item(TextInput(type(_floatinput[key][0]), newDevice_name._value + " " + key, _floatinput[key][1], _floatinput[key][2], _floatinput[key][3], _floatinput[key][4]))
     if _textdisplay != None:
         for key in _textdisplay.keys():
-            add_device_page.add_item(TextDisplay(type(_textdisplay[key](0)), label=newDevice_name + _textdisplay[key](1)).connect(newDevice.field(key)))
+            #add_device_page.add_item(TextDisplay(type(_textdisplay[key](0)), label=newDevice_name + _textdisplay[key](1)).connect(newDevice.field(key)))
+            None
     return newDevice
-
+'''
 # TODO
 # furrther action need async action taker to connect to devices.
 # markup the device with syntax of lambda functions like the followint 
