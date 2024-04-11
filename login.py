@@ -3,6 +3,8 @@ from tkinter import messagebox
 from PIL import Image, ImageTk
 import logging
 import os
+import init
+
 
 # 设置日志
 logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -167,9 +169,8 @@ def add_avatar(window):
     else:
         logging.warning("Avatar image not found")
 
-# 空的 main 函数
-def main():
-    pass
+# 调用 init.py 中的主函数
+init.main()
 
 # 测试代码
 if __name__ == "__main__":
