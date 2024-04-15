@@ -1,13 +1,37 @@
+from datetime import datetime
+import errno
 import tkinter as tk
 from tkinter import messagebox
 from PIL import Image, ImageTk
 import logging
 import os
 import init
+from shc.base import logger
 
+PWD = os.getcwd()
+CURRENTTIME = datetime.now().strftime("%Y%m%d%H%M%S")
+LOGFILE = PWD + "/log/"
+# pre-check if directory exisist
+if os.path.exists(LOGFILE):
+    logger.info("Log directory %s exisist.", LOGFILE)
+else:
+    logger.info("./log is incorrect form, trying to fix")
+    try:
+        os.remove(LOGFILE)
+    except OSError as e:
+        if e.errno != errno.ENOENT: # errno.ENOENT = no such file or directory
+            logger.error("Error removing the path %s as not exist, error value: %s",LOGFILE, exc_info=e)
+    except BaseException as e:
+        logger.error("Error removing the path %s when operating, error value: %s",LOGFILE, exc_info=e)
+        raise e
+    finally:
+        os.makedirs(LOGFILE, exist_ok=True)
+        logger.info("Log directory created at %s", LOGFILE)
+LOGFILE = LOGFILE + CURRENTTIME + ".log"
 
 # 设置日志
-logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# change the log directory to /log
+logging.basicConfig(filename=LOGFILE, level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # 默认用户名和密码
 DEFAULT_USERNAME = 'admin'

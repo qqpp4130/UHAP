@@ -4,3 +4,4 @@ smarthomeconnect>=0.8.0
 seamapi
 tk
 pillow
+simplejson
