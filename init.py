@@ -1,33 +1,206 @@
 # !/usr/bin/python
-import errno
+import random
 import shc
 import os
+import sys
+from itertools import islice
 from datetime import datetime
-from src import HttpServer
-from src import Logger
-LOGDIR = os.getcwd() + "\\log"
+from src import style
+import shc
+import os
+from shc.web import WebServer
+from shc.datatypes import *
+from shc.web.widgets import *
+from shc.base import logger
+
+global PWD, CURRENTTIME, DEVICELIST
+PWD = os.getcwd()
 CURRENTTIME = datetime.now().strftime("%Y%m%d%H%M%S")
-LOGFILE = LOGDIR + "\\" + CURRENTTIME + ".log"
+logger.info("Server is starting at %s", CURRENTTIME)
+# initialize the device list, shc._ALL_VARIABLES is accssable as the all variable set
+# this list is using name as key and following by the value of the shc.variable
+# loading device list from the database
+DEVICELIST: dict[str, shc.Variable] = style.deviceReader(None, PWD)
 
-isLogDir = os.path.exists(LOGDIR)
+# WARNING, folloing assignment of variable is subject to remove in the following commit. Please change the code accordingly
+# TODO: implemented with device.db, move all variable to the config file.
+# set up Device types
+DEVICELIST['camera'] = shc.Variable(bool, 'camera', False)
+DEVICELIST['light'] = shc.Variable(bool, 'light', False)
 
-LOG = Logger.TimestampLogger()
+#New device setup scheme. Using class for different type of device and group the arguments together in one shc.Variable
+dimmer_light = shc.Variable(style.Switch_Device, "dimmer light", initial_value=style.Switch_Device(False, True, False, 0.0, RGBUInt8(RangeUInt8(0), RangeUInt8(0), RangeUInt8(0))))
+thermostat = shc.Variable(style.Thermostat_Device, 'theromostat', initial_value=style.Thermostat_Device(True, False, False, 1.0, 20.0, 35.0, 35.0, 35.0))
+multimedia = shc.Variable(style.Multimedia_Device, "speaker", initial_value=style.Multimedia_Device(False, "None", 0.0))
+neon_light = shc.Variable(style.Switch_Device, 'neon_light', initial_value=style.Switch_Device(False, False, True, color=RGBUInt8(RangeUInt8(0), RangeUInt8(0), RangeUInt8(0))))
 
-if isLogDir:
-    msg = "Log is goint to be logged in " + LOGFILE + "\n"
-    LOG.print(msg)
-else:
-    msg = "./log is incorrect form, trying to fix \n"
-    LOG.print(msg)
-    try:
-        os.remove(LOGDIR)
-    except OSError as e:
-        if e.errno != errno.ENOENT: # errno.ENOENT = no such file or directory
-            raise e # re-raise exception if a different error occurred
-    except:
-        print("Something else went wrong")
-        raise
-    finally:
-        os.makedirs(LOGDIR, exist_ok=True)
-        msg = "log directory created \n"
-        LOG.print(msg)
+#connect old variable to new form of variable group
+speaker = multimedia.field('power')
+switch = dimmer_light.field('power')
+dimmer = dimmer_light.field('brightness')
+fan = thermostat.field('fan')
+therometer = thermostat.field('tempadjust')
+temperture = thermostat.field('temperature')
+humidity = thermostat.field('humidadjust')
+
+# connect the device power with the field converted to bool
+dimmer_light.field('power').connect(dimmer_light.field('brightness'), convert=True)
+thermostat.field('fan').connect(thermostat.field('level'), convert=True)
+
+# initialilze httpserver object
+# Define server main function and child components
+# WebServer running at port 8080
+web_server = WebServer('localhost', 8080, index_name='index')
+
+# Page index (Home)
+index_page = web_server.page('index', 'Home', menu_entry=True, menu_icon='home')
+
+# Toggle button bar
+index_page.add_item(ButtonGroup("State of the Device", [
+    ToggleButton(speaker.parent.name).connect(speaker),
+    # Foobar requires confirmation when switched on.
+    ToggleButton(DEVICELIST['camera'].name, color='black',
+                confirm_message="Do you want to turn it on?", confirm_values=[True]).connect(DEVICELIST['camera']),
+]))
+# We can also use ValueButtons to represent individual states (here in the 'outline' version)
+index_page.add_item(ButtonGroup("Thermostat", [
+    ValueButton(False, "Off", outline=True, color="black").connect(fan),
+    ValueButton(True, "On", outline=True).connect(fan),
+    TextInput(float, icon('temperature high', "{} ") + therometer.parent.name, min=16.0, max=36.0, step=0.5, input_suffix="°C").connect(temperture),
+    TextDisplay(RangeFloat1, icon('tint', "{} "), humidity.parent.name).connect(humidity)
+]))
+
+# Another segment in the right column
+# color light bulb
+index_page.new_segment("The neon light bulb with dimmer")
+
+index_page.add_item(Switch(switch.parent.name, color='red').connect(switch))
+index_page.add_item(ColorChoser().connect(neon_light.field("color")))
+magic_button = StatelessButton(None, label=icon('magic'), color="orange")
+index_page.add_item(ButtonGroup("Supprise!", [magic_button]))
+
+# Trigger to randomize color
+@magic_button.trigger
+@shc.handler()
+async def do_rand(_v, _o) -> None:
+    await neon_light.write(RGBUInt8(RangeUInt8(random.randint(0, 255)), RangeUInt8(random.randint(0, 255)), RangeUInt8(random.randint(0, 255))))
+
+index_page.add_item(MinMaxButtonSlider(dimmer.parent.name, color='black').connect(dimmer))
+
+# Overview page
+overview_page = web_server.page('overview', "Overview", menu_entry=True, menu_icon='tachometer alternate')
+
+# ImageMap supports all the different Buttons as items, as well as the special ImageMapLabel
+# The optional fourth entry of each item is a list of WebPageItems (everything we have shown so far – even an ImageMap))
+# to be placed in a popup shown when the item is clicked.
+overview_page.add_item(ImageMap(
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Newburn_Flats_Floor_Plan.pdf"
+    "/page1-543px-Newburn_Flats_Floor_Plan.pdf.jpg",
+    [
+        (0.20, 0.30, ToggleButton(switch.parent.name, outline=True).connect(switch)),
+        (0.33, 0.30, ToggleButton(fan.parent.name, color='red', outline=True).connect(fan)),
+        # DEVICELIST['camera'] requires confirmation when switched on.
+        (0.67, 0.30, ToggleButton(DEVICELIST['camera'].name, color='black', outline=True,
+                                  confirm_message="Do you want the DEVICELIST['camera'] on?", confirm_values=[True]).connect(DEVICELIST['camera'])),
+
+        (0.26, 0.42, ToggleButton(label=icon('volume up icon'), color="red").connect(speaker)),
+        (0.67, 0.42, ToggleButton(label=icon('volume up icon'), color="red").connect(speaker)),
+
+        # We use the RangeFloat1 → bool conversion here to highlight the button with the popup, whenever the dimmer
+        # value is > 0. To use another condition, you can pass a (lambda) function to the `convert` parameter
+        (0.42, 0.52, DisplayButton(label=icon('lightbulb outline icon'), color="black").connect(dimmer, convert=True), [
+            Slider(dimmer.parent.name).connect(dimmer)
+        ]),
+    ]
+))
+
+overview_page.new_segment()
+overview_page.add_item(HideRowBox([
+    TextDisplay(str, "Device that has powered up", " List view"),
+    HideRow(speaker.parent.name, color='blue').connect(speaker),
+    HideRow(fan.parent.name, color='red').connect(fan),
+    # The optional button in the HideRow is completely independent from the row itself. Thus, we must connect the DEVICELIST['camera']
+    # variable individually to the button and to the HideRow
+    HideRow(DEVICELIST['camera'].name, color='black', button=StatelessButton(False, icon('power off'), color='red').connect(DEVICELIST['camera']))
+    .connect(DEVICELIST['camera']),
+]))
+
+# create a new page for new elements
+add_device_page = web_server.page('add', "Add", menu_entry=True, menu_icon='plus circle icon')
+
+# device selection to add bar
+newDevice_type = shc.Variable(style.DevicesEnum, 'Device', initial_value=style.DevicesEnum.Switch)
+add_device_page.add_item(EnumSelect(style.DevicesEnum, "Add device type selection").connect(newDevice_type))
+
+# impliment the button to add the device to the page
+add_button = StatelessButton(None, label=icon('plus'), color="black")
+add_device_page.add_item(ButtonGroup("Add the device to the page", [add_button]))
+
+# segment for adding the input of the device
+add_device_page.new_segment("New Devices setup")
+
+# edit the argument of the new device
+newDevice_name = shc.Variable(str, initial_value="New Device")
+add_device_page.add_item(TextInput(str, 'The name of the device').connect(newDevice_name))
+newDevice_instanse = style.EnumDevice[newDevice_type._value.value]()
+add_device_page.add_item(TextInput(str, 'Value of the device: Not initialized ', "{} "))
+valuefield = add_device_page.segments[-1].items[-1]
+# Trigger to update the element of the value input format
+# FIXME device type does not change with update
+@newDevice_type.trigger
+@shc.blocking_handler()
+def sync(newDevice_instanse) -> shc.Variable:
+    print("Device type changed")
+    newDevice_instanse = style.EnumDevice[newDevice_type._value.value]()
+    add_device_page.segments[-1].items.pop()
+    add_device_page.add_item(TextInput(style.EnumDevice[newDevice_type._value.value], 'Value of the device', "{} ").connect(newDevice_instanse))
+    print("value set: " + str(newDevice_instanse._asdict()))
+    print("List of variables: " + str(DEVICELIST))
+    return newDevice_instanse
+
+# Trigger to add the device after the trigger
+# FIXME the added device cannot be determained with error message: Could not route message from websocket to connector, since no connector with id 140542855234896 is known.
+@add_button.trigger
+@shc.handler()
+async def add_to() -> None:
+    print("New button pressed")
+    _turnable = newDevice_instanse.turnable()
+    _turnlist = []
+    _adjustable = newDevice_instanse.minmaxadjust()
+    _coloradjustable = newDevice_instanse.coloradjust()
+    _floatinput = newDevice_instanse.floatinput()
+    _textdisplay = newDevice_instanse.textdisplay()
+    print("initialized list of variables")
+    DEVICELIST.update({newDevice_name._value:shc.Variable(style.EnumDevice[newDevice_type._value.value], newDevice_name._value)})
+    # initialize the newdevice shc.Variable object to return
+    print("Device " + newDevice_name._value + " is initialized: "+ str(DEVICELIST[newDevice_name._value]._variable_fields))
+    if _turnable != None:
+        for key in _turnable.keys():
+            _turnlist.append(Switch(key).connect(DEVICELIST[newDevice_name._value].field(key)))
+        add_device_page.add_item(ButtonGroup("Toggle of the Device " + newDevice_name._value, _turnlist))
+    if _adjustable != None:
+        for key in _adjustable.keys():
+            add_device_page.add_item(MinMaxButtonSlider(newDevice_name._value + " " + key).connect(DEVICELIST[newDevice_name._value].field(key)))
+    if _coloradjustable != None:
+        for key in _coloradjustable.keys():
+            add_device_page.add_item(ColorChoser().connect(DEVICELIST[newDevice_name._value].field(key)))
+    if _floatinput != None:
+        for key in _floatinput.keys():
+            add_device_page.add_item(TextInput(type(_floatinput[key][0]), newDevice_name._value + " " + key, _floatinput[key][1], _floatinput[key][2], _floatinput[key][3], _floatinput[key][4]).connect(DEVICELIST[newDevice_name._value].field(key)))
+    if _textdisplay != None:
+        for key in _textdisplay.keys():
+            add_device_page.add_item(TextDisplay(type(_textdisplay[key](0)), label=newDevice_name._value + _textdisplay[key](1)).connect(DEVICELIST[newDevice_name._value].field(key)))
+    print("Item add to page")
+    await valuefield.render()
+    print("Render successful")
+
+# TODO
+# furrther action need async action taker to connect to devices.
+# markup the device with syntax of lambda functions like the followint 
+# @magic_button.trigger
+# @shc.handler()
+# async def do_rand(_v, _o) -> None:
+
+# Startup the deamon by shc.main() and preform clean exit after daemon has closed
+logger.info('Server is starting...')
+sys.exit(shc.main())
