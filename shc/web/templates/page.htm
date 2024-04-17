@@ -1,0 +1,32 @@
+{# Copyright 2020 Michael Thies <mail@mhthies.de>
+ #
+ # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ # the License. You may obtain a copy of the License at
+ #
+ #     http://www.apache.org/licenses/LICENSE-2.0
+ #
+ # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ # an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ # specific language governing permissions and limitations under the License.
+ #}
+{% extends "base.htm" %}
+{% block content %}
+    <h1 class="ui inverted header">{{ title }}</h1>
+    <div class="ui stackable grid">
+        {% for segment in segments %}
+            {% if not segment.same_column or loop.first or segment.full_width %}
+                {% if not loop.first %}</div>{% endif %}
+                <div class="{% if segment.full_width %}sixteen{% else %}eight{% endif %} wide column">
+            {% endif %}
+                {% if segment.title %}<h3 class="ui inverted header">{{ segment.title }}</h3>{% endif %}
+                <div class="ui segment">
+                    <div class="ui relaxed divided list">
+                        {% for item in segment.items %}
+                            <div class="item">{{ item.render()|safe }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% if loop.last %}</div>{% endif %}
+        {% endfor %}
+    </div>
+{% endblock %}

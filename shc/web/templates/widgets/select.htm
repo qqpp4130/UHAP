@@ -1,0 +1,11 @@
+<label class="shc label float-btn">{{ label }}</label>
+<div class="ui right floated selection dropdown">
+    <input type="hidden" data-widget="select" data-id="{{ id }}">
+    <i class="dropdown icon"></i>
+    <div class="default text"></div>
+    <div class="menu">
+        {% for val, label in options %}
+            <div class="item" data-value='{{ val }}'>{{ label }}</div>
+        {% endfor %}
+    </div>
+</div>
