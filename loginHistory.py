@@ -1,10 +1,3 @@
-# Copyright 2020 Michael Thies <mail@mhthies.de>
-#
-# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
-# the License. You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
@@ -45,36 +38,36 @@ async def new_bool(_v, _o):
 
 
 # The web server and web page
-web_server = shc.web.WebServer('localhost', 8081, index_name='index')
-index_page = web_server.page('index', 'Home', menu_entry=True, menu_icon='home')
+web_server = shc.web.WebServer('localhost', 8081, index_name='history')
+history_page = web_server.page('history', 'history', menu_entry=True, menu_icon='home')
 
 
 #############################################################################################
 # Log list widget                                                                           #
 #############################################################################################
-index_page.add_item(shc.web.log_widgets.LogListWidget(datetime.timedelta(minutes=5), [
+history_page.add_item(shc.web.log_widgets.LogListWidget(datetime.timedelta(minutes=5), [
     LogListDataSpec(random_bool_log, format=lambda x: "on" if x else "off", color="teal"),
     LogListDataSpec(random_float_log),
 ]))
 
 
-index_page.add_item(shc.web.log_widgets.LogListWidget(datetime.timedelta(minutes=5), [
+history_page.add_item(shc.web.log_widgets.LogListWidget(datetime.timedelta(minutes=5), [
     LogListDataSpec(random_bool_log, format="{:.2f} s", aggregation=AggregationMethod.ON_TIME)
 ]))
 
-index_page.add_item(shc.web.log_widgets.LogListWidget(datetime.timedelta(minutes=5), [
+history_page.add_item(shc.web.log_widgets.LogListWidget(datetime.timedelta(minutes=5), [
     LogListDataSpec(random_float_log,
                     format=icon('thermometer', "{:.2f} °C"),
                     aggregation=AggregationMethod.AVERAGE)
 ]))
 
-index_page.new_segment()
+history_page.new_segment()
 
-index_page.add_item(shc.web.log_widgets.ChartWidget(datetime.timedelta(minutes=5), [
+history_page.add_item(shc.web.log_widgets.ChartWidget(datetime.timedelta(minutes=5), [
     ChartDataSpec(random_float_log, "random float", scale_factor=10)
 ]))
 
-index_page.add_item(shc.web.log_widgets.ChartWidget(datetime.timedelta(minutes=5), [
+history_page.add_item(shc.web.log_widgets.ChartWidget(datetime.timedelta(minutes=5), [
     ChartDataSpec(random_float_log, "avg", aggregation=AggregationMethod.AVERAGE, unit_symbol="°C"),
     ChartDataSpec(random_float_log, "min", aggregation=AggregationMethod.MINIMUM, unit_symbol="°C"),
     ChartDataSpec(random_float_log, "max", aggregation=AggregationMethod.MAXIMUM, unit_symbol="°C"),
