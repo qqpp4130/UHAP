@@ -31,8 +31,8 @@ class Switch_Device(NamedTuple):
         return None
     def textdisplay(self):
         return None
-    def fromJSON(String: str):
-        _temp = Switch_Device(**json.loads(String))
+    def fromJSON(Dictonary: dict):
+        _temp = Switch_Device(**Dictonary)
         # correct the format by recreate the field variable
         self = _temp._replace(brightness = RangeFloat1(_temp.brightness))
         self = _temp._replace(color = RGBUInt8(**_temp.color))
@@ -57,8 +57,8 @@ class Thermostat_Device(NamedTuple):
         return {"tempadjust":(self.tempadjust, 16.0, 32.0, 0.5, "℃"), "humidadjust":(self.humidadjust, 30.0, 80.0, 5.0, "%")}
     def textdisplay(self):
         return {"temperature":(self.temperature, " Current temperature ℃ "), "humidity":(self.humidity, " Current humidity % ")}
-    def fromJSON(String: str):
-        _temp = Thermostat_Device(**json.loads(String))
+    def fromJSON(Dictonary: dict):
+        _temp = Thermostat_Device(**Dictonary)
         # correct the format by recreate the field variable
         self = _temp._replace(level = RangeFloat1(_temp.level))
         self = _temp._replace(humidity = RangeFloat1(_temp.humidity))
@@ -87,8 +87,8 @@ class Camera_Device(NamedTuple):
         return None
     def textdisplay(self):
         return None
-    def fromJSON(String: str):
-        _temp = Camera_Device(**json.loads(String))
+    def fromJSON(Dictonary: dict):
+        _temp = Camera_Device(**Dictonary)
         # correct the format by recreate the field variable
         self = _temp._replace(xaxis = RangeFloat1(_temp.xaxis))
         self = _temp._replace(yaxis = RangeFloat1(_temp.yaxis))
@@ -108,8 +108,8 @@ class Multimedia_Device(NamedTuple):
         return None
     def textdisplay(self):
         return {"metadata":(self.metadata, "Now Playing ")}
-    def fromJSON(String: str):
-        _temp = Multimedia_Device(**json.loads(String))
+    def fromJSON(Dictonary: dict):
+        _temp = Multimedia_Device(**Dictonary)
         # correct the format by recreate the field variable
         self = _temp._replace(level = RangeFloat1(_temp.level))
         return self
@@ -173,8 +173,7 @@ def writer(variables: dict[str, shc.Variable], JSONvalue: dict[str, dict]) -> di
                 pass
         # return a string form of class name
         typing = reading.__class__.__name__
-        _newvalues[k]['values'] = json.loads(json.dumps(reading))
-        _newvalues[k]['type'] = typing
+        _newvalues.update({ k : { 'values' : json.loads(json.dumps(reading)), 'type' : typing }})
     return _newvalues
 
 def deviceStore(variables: dict[str, shc.Variable], handle: TextIOWrapper | None, root: str = os.getcwd()):
@@ -204,7 +203,7 @@ def JSONinterpreter(key: str, value: dict[str, dict], variables: dict[str, shc.V
     """
     Receiving a str key that is in origin. The dict is structure as {type, values} for the stored JSON value. By checking the shc.variable value method can findout if the class is able to use buildin method to phrase JSON into correct datatype. If it is a regular NameTuple it may imported with the dictonary depacked, if it is regular python class it may directly import from the value reads from JSON
     """
-    tp = locate(value['type'])
+    tp = eval(value['type'])
     val = None
     # NamedTuple special implimentation
     if issubclass(tp, tuple):
@@ -215,7 +214,7 @@ def JSONinterpreter(key: str, value: dict[str, dict], variables: dict[str, shc.V
     # regular value implimentation
     else:
         val = tp(value['values'])
-    variables.update(key = shc.Variable(tp, key, val))
+    variables.update({ key : shc.Variable(tp, key, val) })
     return variables
 
 def JSONreader(root: str = os.getcwd()) -> dict[str, dict]:
@@ -238,7 +237,7 @@ def deviceReader(variables: dict[str, shc.Variable] | None, root: str = os.getcw
     # if the list is empty, then it return a list of all variable stored in db
     if not bool(variables):
         for k, v in _content.items():
-            JSONinterpreter(k, v, _variablesRead)
+            _variablesRead = JSONinterpreter(k, v, _variablesRead)
     # if input with a list of value, it trigger the update the value from the file
     else:
         _variablesRead = variables.copy()

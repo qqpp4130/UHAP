@@ -23,6 +23,10 @@ logger.info("Server is starting at %s", CURRENTTIME)
 # this list is using name as key and following by the value of the shc.variable
 # loading device list from the database
 DEVICELIST: dict[str, shc.Variable] = style.deviceReader(None, PWD)
+print(DEVICELIST)
+
+# device selection to add bar
+newDevice_type = shc.Variable(style.DevicesEnum, 'Device', initial_value=style.DevicesEnum.Switch)
 
 class Device(enum.Enum):
     Speakers = 0
@@ -41,26 +45,24 @@ yak_wool = shc.Variable(RangeFloat1, 'yak_wool', initial_value=0.0)
 yak_color = shc.Variable(RGBUInt8, 'yak_color', initial_value=RGBUInt8(RangeUInt8(0), RangeUInt8(0), RangeUInt8(0)))
 
 #set up Device types
-DEVICELIST['camera'] = shc.Variable(bool, 'camera', False)
-DEVICELIST['light'] = shc.Variable(bool, 'light', False)
+#style.deviceStore(DEVICELIST, None)
 
 #New device setup scheme. Using class for different type of device and group the arguments together in one shc.Variable
-dimmer_light = shc.Variable(style.Switch_Device, "dimmer light", initial_value=style.Switch_Device(False, True, False, 0.0, RGBUInt8(RangeUInt8(0), RangeUInt8(0), RangeUInt8(0))))
-thermostat = shc.Variable(style.Thermostat_Device, 'Device.Thermometer', initial_value=style.Thermostat_Device(True, False, False, 1.0, 20.0, 35.0, 35.0, 35.0))
+#DEVICELIST['dimmer_light'] = shc.Variable(style.Switch_Device, "dimmer_light", initial_value=style.Switch_Device(False, True, False, 0.0, RGBUInt8(RangeUInt8(0), RangeUInt8(0), RangeUInt8(0))))
+thermostat = shc.Variable(style.Thermostat_Device, 'theromostat', initial_value=style.Thermostat_Device(True, False, False, 1.0, 20.0, 35.0, 35.0, 35.0))
 multimedia = shc.Variable(style.Multimedia_Device, "speaker", initial_value=style.Multimedia_Device(False, "None", 0.0))
-neon_light = shc.Variable(style.Switch_Device, 'neon_light', initial_value=style.Switch_Device(False, False, True, color=RGBUInt8(RangeUInt8(0), RangeUInt8(0), RangeUInt8(0))))
-
+#DEVICELIST['neon_light'] = shc.Variable(style.Switch_Device, 'neon_light', initial_value=style.Switch_Device(False, False, True, color=RGBUInt8(RangeUInt8(0), RangeUInt8(0), RangeUInt8(0))))
 #connect old variable to new form of variable group
 speaker = multimedia.field('power')
-switch = dimmer_light.field('power')
-dimmer = dimmer_light.field('brightness')
+switch = DEVICELIST['dimmer_light'].field('power')
+dimmer = DEVICELIST['dimmer_light'].field('brightness')
 fan = thermostat.field('fan')
 therometer = thermostat.field('tempadjust')
 temperture = thermostat.field('temperature')
 humidity = thermostat.field('humidadjust')
 
 # connect the device power with the field converted to bool
-dimmer_light.field('power').connect(dimmer_light.field('brightness'), convert=True)
+DEVICELIST['dimmer_light'].field('power').connect(DEVICELIST['dimmer_light'].field('brightness'), convert=True)
 thermostat.field('fan').connect(thermostat.field('level'), convert=True)
 
 # initialilze httpserver object
@@ -82,8 +84,8 @@ index_page.add_item(ButtonGroup("State of the Device", [
 index_page.add_item(ButtonGroup("Thermostat", [
     ValueButton(False, "Off", outline=True, color="black").connect(fan),
     ValueButton(True, "On", outline=True).connect(fan),
-    TextInput(float, icon('temperature high', "{} ") + therometer.parent.name, min=16.0, max=36.0, step=0.5, input_suffix="°C").connect(temperture),
-    TextDisplay(RangeFloat1, icon('tint', "{} "), humidity.parent.name).connect(humidity)
+    TextInput(float, icon('temperature high', f"{temperture._value} ") + therometer.parent.name, min=16.0, max=36.0, step=0.5, input_suffix="°C").connect(temperture),
+    TextDisplay(RangeFloat1, icon('tint', f"{humidity._value} "), humidity.parent.name).connect(humidity)
 ]))
 index_page.add_item(ButtonGroup("State of the Device", [
     ToggleButton("Foo").connect(foo),
@@ -96,19 +98,17 @@ index_page.add_item(ButtonGroup("The Foo", [
     ValueButton(False, "Off", outline=True, color="black").connect(foo),
     ValueButton(True, "On", outline=True).connect(foo),
 ]))
-index_page.add_item(ValueListButtonGroup([(Device.Speakers, '🔊'),
-                                          (Device.Light, '💡'),
-                                          (Device.Thermometer, '🌡️'),
-                                          (Device.Alarm, '🔔'),
-                                          (Device.Door, '🔒')], "Which Device?").connect(yaks_favorite_Device))
-index_page.add_item(EnumButtonGroup(Device, "Which Device, again?").connect(yaks_favorite_Device))
+index_page.add_item(ValueListButtonGroup([(style.DevicesEnum.Switch, '💡'),
+                                          (style.DevicesEnum.Multimedia, '🔊'),
+                                          (style.DevicesEnum.Thermostat, '🌡️'),
+                                          (style.DevicesEnum.Camera, '🔒')], "Which Device?").connect(newDevice_type))
+index_page.add_item(EnumButtonGroup(style.DevicesEnum, "Which Device, again?").connect(newDevice_type))
 
 # … or, let's simply take a dropdown
-index_page.add_item(Select([(Device.Speakers, '🔊'),
-                            (Device.Light, '💡'),
-                            (Device.Thermometer, '🌡️'),
-                            (Device.Alarm, '🔔'),
-                            (Device.Door, '🔒')], "Now really, which Device?").connect(yaks_favorite_Device))
+index_page.add_item(Select([(style.DevicesEnum.Switch, '💡'),
+                            (style.DevicesEnum.Multimedia, '🔊'),
+                            (style.DevicesEnum.Thermostat, '🌡️'),
+                            (style.DevicesEnum.Camera, '🔒')], "Now really, which Device?").connect(newDevice_type))
 # Another segment in the right column
 # We also have buttons, that are only readable (disabled) …
 index_page.add_item(ButtonGroup("State of the Device", [
@@ -119,7 +119,7 @@ index_page.add_item(ButtonGroup("State of the Device", [
 index_page.new_segment("The neon light bulb with dimmer")
 
 index_page.add_item(Switch(switch.parent.name, color='red').connect(switch))
-index_page.add_item(ColorChoser().connect(neon_light.field("color")))
+index_page.add_item(ColorChoser().connect(DEVICELIST['neon_light'].field("color")))
 magic_button = StatelessButton(None, label=icon('magic'), color="orange")
 index_page.add_item(ButtonGroup("Supprise!", [magic_button]))
 
@@ -127,7 +127,7 @@ index_page.add_item(ButtonGroup("Supprise!", [magic_button]))
 @magic_button.trigger
 @shc.handler()
 async def do_rand(_v, _o) -> None:
-    await neon_light.write(RGBUInt8(RangeUInt8(random.randint(0, 255)), RangeUInt8(random.randint(0, 255)), RangeUInt8(random.randint(0, 255))))
+    await DEVICELIST['neon_light'].write(RGBUInt8(RangeUInt8(random.randint(0, 255)), RangeUInt8(random.randint(0, 255)), RangeUInt8(random.randint(0, 255))))
 
 index_page.add_item(MinMaxButtonSlider(dimmer.parent.name, color='black').connect(dimmer))
 
@@ -172,11 +172,6 @@ overview_page.add_item(HideRowBox([
 
 # create a new page for new elements
 add_device_page = web_server.page('add', "Add", menu_entry=True, menu_icon='plus circle icon')
-
-# device selection to add bar
-newDevice_type = shc.Variable(style.DevicesEnum, 'Device', initial_value=style.DevicesEnum.Switch)
-
-
 add_device_page.add_item(EnumSelect(style.DevicesEnum, "Add device type selection").connect(newDevice_type))
 
 # impliment the button to add the device to the page
@@ -192,11 +187,10 @@ add_device_page.new_segment(same_column=True)
 
 # it even allows to HTML-format the value (or use a custom function for formatting):
 
-add_device_page.add_item(ValueListButtonGroup([(Device.Speakers, '🔊'),
-                                          (Device.Light, '💡'),
-                                          (Device.Thermometer, '🌡️'),
-                                          (Device.Alarm, '🔔'),
-                                          (Device.Door, '🔒')], "Which Device?").connect(yaks_favorite_Device))
+add_device_page.add_item(ValueListButtonGroup([(style.DevicesEnum.Switch, '💡'),
+                                          (style.DevicesEnum.Multimedia, '🔊'),
+                                          (style.DevicesEnum.Thermostat, '🌡️'),
+                                          (style.DevicesEnum.Camera, '🔒')], "Which Device?").connect(newDevice_type))
 # edit the argument of the new device
 newDevice_name = shc.Variable(str, initial_value="New Device")
 add_device_page.add_item(TextInput(str, 'The name of the device').connect(newDevice_name))
